@@ -1,0 +1,87 @@
+name: github-action
+run-name: ${{ github.actor }} is out building GitHub Actions
+
+on:
+  push:
+    # Pattern matched against refs/tags
+    tags:        
+      - '**' 
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Build Maven Projects
+        run: |
+          mvn clean package -f ./work/pom.xml
+          mvn clean package -f ./accountInfo/pom.xml
+          mvn clean package -f ./workType/pom.xml
+          mvn clean package -f ./policyChecker/pom.xml
+          mvn clean package -f ./userInfo/pom.xml
+
+      - name: Docker Build and push for Work
+        uses: docker/build-push-action@v4
+        with:
+          context: ./work
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/work:latest
+            ghcr.io/${{ github.repository }}/work:${{ github.ref_name }}
+            
+      - name: Docker Build and push for AccountInfo
+        uses: docker/build-push-action@v4
+        with:
+          context: ./accountInfo
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/accountinfo:latest
+            ghcr.io/${{ github.repository }}/accountinfo:${{ github.ref_name }}
+            
+      - name: Docker Build and push for WorkType
+        uses: docker/build-push-action@v4
+        with:
+          context: ./workType
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/worktype:latest
+            ghcr.io/${{ github.repository }}/worktype:${{ github.ref_name }}
+            
+      - name: Docker Build and push for PolicyChecker
+        uses: docker/build-push-action@v4
+        with:
+          context: ./policyChecker
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/policychecker:latest
+            ghcr.io/${{ github.repository }}/policychecker:${{ github.ref_name }}
+            
+      - name: Docker Build and push for UserInfo
+        uses: docker/build-push-action@v4
+        with:
+          context: ./userInfo
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/userinfo:latest
+            ghcr.io/${{ github.repository }}/userinfo:${{ github.ref_name }}
+            
